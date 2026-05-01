@@ -54,7 +54,11 @@ class DownloadingPlayList(PlayList):
         self.downloaded_videos: List[DownloadingVideo] = []
         self.converting_videos: List[DownloadingVideo] = []
         self.download_state: Literal["waiting", "downloading", "downloaded", "failed", "converting"] = "waiting"
-         
+        
+        self.total_download_size: int = 0
+        self.current_download_size: int = 0
+        self.current_taken_time: float = 0.0
+
         super().__init__(
             root=root,
             master=master,
@@ -226,7 +230,11 @@ class DownloadingPlayList(PlayList):
         avg_completion = total_completion / self.playlist_video_count
         self.set_playlist_download_progress(avg_completion, total_bytes_downloaded, total_bytes_to_download)
         self.set_estimated_time(total_bytes_to_download, total_download_time, total_bytes_downloaded)
-    
+        
+        self.total_download_size = total_bytes_to_download
+        self.current_download_size = total_bytes_downloaded
+        self.current_taken_time = total_download_time
+
     def get_total_download_size(self):
         total_bytes_to_download: float = 0
         for video in self.videos:
@@ -360,7 +368,7 @@ class DownloadingPlayList(PlayList):
                 text=f"{LanguageManager.data['calculating']}"
             )
         else:
-            self.set_estimated_time()
+            self.set_estimated_time(self.total_download_size, self.current_taken_time, self.current_download_size)
 
     def set_estimated_time(self, total_download_size, current_taken_time, current_download_size):
         eta_time = DownloadInfoUtility.get_estimated_time(total_download_size, current_taken_time, current_download_size)
@@ -462,7 +470,7 @@ class DownloadingPlayList(PlayList):
         self.status_label.place(relx=0.775, anchor="n", rely=0.55)
         self.videos_status_counts_label.place(rely=0.875, relx=0.5, anchor="center")
         self.total_download_size_progress_label.place(rely=0.55, relx=0.05, anchor="nw")
-        self.estimated_remaining_time_label.place(rely=0.15, relx=0.775, anchor="n")
+        self.estimated_remaining_time_label.place(rely=0.15, relx=0.775, anchor="ne")
 
     # configure widgets sizes and place location depend on root width
     def configure_widget_sizes(self, _event):
